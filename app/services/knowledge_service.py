@@ -1,37 +1,22 @@
-from typing import List
-
 from app.services.vector_service import vector_service
 
 
 class KnowledgeService:
-    """
-    Service responsible for retrieving relevant knowledge
-    from the knowledge base using vector search.
-    """
 
-    def retrieve(self, query: str, top_k: int = 3) -> List[str]:
-        """
-        Retrieve relevant knowledge chunks for a user query
-        """
+    def retrieve(self, query: str, top_k: int = 3):
 
-        results = vector_service.search(query=query, top_k=top_k)
+        return vector_service.search(query=query, top_k=top_k)
 
-        return results
+    def build_context(self, query: str, top_k: int = 3):
 
-    def build_context(self, query: str, top_k: int = 3) -> str:
-        """
-        Build context string for LLM from retrieved knowledge
-        """
+        results = self.retrieve(query=query, top_k=top_k)
 
-        knowledge_chunks = self.retrieve(query=query, top_k=top_k)
+        context_parts = []
 
-        if not knowledge_chunks:
-            return ""
+        for r in results:
+            context_parts.append(r["text"])
 
-        context = "\n\n".join(knowledge_chunks)
-
-        return context
+        return "\n\n".join(context_parts)
 
 
-# Singleton instance
 knowledge_service = KnowledgeService()
