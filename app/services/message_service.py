@@ -1,106 +1,91 @@
 from sqlalchemy.orm import Session
 
-from app.repositories.user_repository import UserRepository
 from app.repositories.message_repository import MessageRepository
+from app.repositories.user_repository import UserRepository
+from app.schemas.message_schema import MessageResponse
 from app.services.intent_service import detect_intent
+from app.services.knowledge_service import knowledge_service
+from app.services.llm_service import llm_service
 from app.services.segment_service import detect_segment
 
 
-def handle_message(
-    db: Session,
-    user_id: str,
-    name: str,
-    message: str
-):
+class MessageService:
     """
-    Main pipeline for processing user messages.
+    Main orchestration service for processing user messages.
     """
 
-    if not user_id:
-        raise ValueError("user_id is required")
+    @staticmethod
+    def handle_message(
+        db: Session,
+        user_id: str,
+        name: str,
+        message: str,
+    ) -> MessageResponse:
+        """
+        Process incoming user message through the full pipeline:
 
-    if not message or message.strip() == "":
-        raise ValueError("message cannot be empty")
+        1. Find or create user
+        2. Update user activity
+        3. Detect intent
+        4. Detect user segment
+        5. Retrieve relevant knowledge
+        6. Generate assistant reply
+        7. Determine if human support is needed
+        8. Save message in database
+        9. Return structured API response
+        """
 
-    user_repo = UserRepository(db)
-    message_repo = MessageRepository(db)
+        # 1. Find existing user or create a new one
+        user = UserRepository.get_by_user_id(db=db, user_id=user_id)
 
-    # ---------- get or create user ----------
-    user = user_repo.get_by_user_id(user_id)
+        # 2. Detect intent first
+        intent = detect_intent(message)
 
-    # ---------- detect intent ----------
-    intent = detect_intent(message)
+        # 3. Detect user segment
+        user_segment = detect_segment(intent)
 
-    # ---------- detect user segment ----------
-    segment = detect_segment(intent)
+        if not user:
+            user = UserRepository.create_user(
+                db=db,
+                user_id=user_id,
+                name=name,
+                segment=user_segment,
+            )
+        else:
+            # optional: update name if changed
+            UserRepository.update_last_seen(db=db, user=user)
 
-    if not user:
-        user = user_repo.create_user(
+        # 4. Retrieve relevant knowledge context
+        context = knowledge_service.build_context(query=message, top_k=3)
+
+        # 5. Generate assistant reply
+        reply = llm_service.generate_reply(
+            user_message=message,
+            context=context,
+            intent=intent,
+            user_segment=user_segment,
+        )
+
+        # 6. Decide whether human support is needed
+        needs_human_support = intent == "support_request"
+
+        # 7. Save conversation in database
+        MessageRepository.create_message(
+            db=db,
             user_id=user_id,
-            name=name,
-            segment=segment
+            user_message=message,
+            assistant_reply=reply,
+            intent=intent,
+            needs_human_support=needs_human_support,
         )
-    else:
-        user_repo.update_last_seen(user)
 
-    # ---------- determine if human support needed ----------
-    needs_human_support = intent == "support_request"
-
-    # ---------- generate reply ----------
-    reply = generate_mock_reply(intent)
-
-    # ---------- store message ----------
-    message_repo.create_message(
-        user_id=user_id,
-        user_message=message,
-        assistant_reply=reply,
-        intent=intent,
-        needs_human_support=needs_human_support
-    )
-
-    # ---------- response ----------
-    return {
-        "reply": reply,
-        "intent": intent,
-        "user_segment": segment,
-        "needs_human_support": needs_human_support
-    }
-
-
-def generate_mock_reply(intent: str) -> str:
-    """
-    Temporary mock responses instead of real LLM.
-    """
-
-    replies = {
-        "vip_question": (
-            "خدمات VIP راستاد شامل سیگنال‌های اختصاصی، تحلیل حرفه‌ای بازار "
-            "و دسترسی به فرصت‌های ویژه سرمایه‌گذاری است."
-        ),
-
-        "exchange_registration": (
-            "برای ثبت‌نام در صرافی می‌توانید از لینک معرفی راستاد استفاده کنید. "
-            "پس از ثبت‌نام و احراز هویت، امکان استفاده از خدمات فراهم می‌شود."
-        ),
-
-        "kol_collaboration": (
-            "برای همکاری به عنوان KOL با راستاد لطفاً اطلاعات شبکه اجتماعی "
-            "و میزان فالوور خود را ارسال کنید تا تیم همکاری با شما تماس بگیرد."
-        ),
-
-        "support_request": (
-            "درخواست شما ثبت شد و تیم پشتیبانی راستاد در اسرع وقت با شما "
-            "ارتباط خواهد گرفت."
-        ),
-
-        "general_info": (
-            "برای اطلاعات بیشتر درباره خدمات راستاد می‌توانید سوال خود را "
-            "کمی دقیق‌تر مطرح کنید."
+        # 8. Return API response
+        return MessageResponse(
+            reply=reply,
+            intent=intent,
+            user_segment=user_segment,
+            needs_human_support=needs_human_support,
         )
-    }
 
-    return replies.get(
-        intent,
-        "متوجه سوال شما نشدم. لطفاً سوال خود را واضح‌تر بپرسید."
-    )
-    
+
+message_service = MessageService()

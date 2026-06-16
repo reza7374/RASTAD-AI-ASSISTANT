@@ -1,5 +1,3 @@
-# app/services/knowledge_service.py
-
 from typing import List
 
 from app.services.vector_service import vector_service

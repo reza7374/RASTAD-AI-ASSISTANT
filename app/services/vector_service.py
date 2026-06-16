@@ -1,5 +1,3 @@
-# app/services/vector_service.py
-
 import os
 from typing import List
 
@@ -27,60 +25,63 @@ class VectorService:
         self._load_documents()
         self._build_index()
 
-    def _load_documents(self):
+    def _load_documents(self) -> None:
         """
-        Load all text files from knowledge_base directory
+        Load all text files from knowledge base directory.
         """
         docs = []
 
-        for file in os.listdir(self.knowledge_path):
-            if file.endswith(".txt"):
-                path = os.path.join(self.knowledge_path, file)
+        if not os.path.exists(self.knowledge_path):
+            self.documents = []
+            return
 
-                with open(path, "r", encoding="utf-8") as f:
-                    text = f.read()
+        for file_name in os.listdir(self.knowledge_path):
+            if file_name.endswith(".txt"):
+                file_path = os.path.join(self.knowledge_path, file_name)
 
-                    docs.append(text)
+                with open(file_path, "r", encoding="utf-8") as f:
+                    text = f.read().strip()
+
+                    if text:
+                        docs.append(text)
 
         self.documents = docs
 
-    def _build_index(self):
+    def _build_index(self) -> None:
         """
-        Create embeddings and build FAISS index
+        Create embeddings and build FAISS index.
         """
-
         if not self.documents:
+            self.index = None
             return
 
         embeddings = self.model.encode(self.documents)
-
         embeddings = np.array(embeddings).astype("float32")
 
         dimension = embeddings.shape[1]
-
         self.index = faiss.IndexFlatL2(dimension)
         self.index.add(embeddings)
 
     def search(self, query: str, top_k: int = 3) -> List[str]:
         """
-        Perform semantic search in the knowledge base
+        Perform semantic search in the knowledge base.
         """
-
-        if self.index is None:
+        if self.index is None or not query.strip():
             return []
 
         query_embedding = self.model.encode([query])
         query_embedding = np.array(query_embedding).astype("float32")
 
+        top_k = min(top_k, len(self.documents))
+
         distances, indices = self.index.search(query_embedding, top_k)
 
         results = []
         for idx in indices[0]:
-            if idx < len(self.documents):
+            if 0 <= idx < len(self.documents):
                 results.append(self.documents[idx])
 
         return results
 
 
-# Singleton instance
 vector_service = VectorService()
