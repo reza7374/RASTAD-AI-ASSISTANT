@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+.env.*
+*.log
+vector_index/
+.vscode/
+.idea/
