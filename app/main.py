@@ -4,12 +4,15 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.routes import router
 from app.db.database import engine, Base 
+from app.db import models
 
 
 app = FastAPI()
-
 Base.metadata.create_all(bind=engine)
 app.include_router(router)
+
+
+
 @app.get("/health")
 def health_check():
     try:
