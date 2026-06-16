@@ -39,7 +39,7 @@ class MessageService:
             UserRepository.update_last_seen(db=db, user=user)
 
         # Retrieve knowledge
-        context = knowledge_service.build_context(query=message, top_k=3)
+        context = knowledge_service.build_context(query=message, top_k=1)
 
         # Generate reply
         reply = llm_service.generate_reply(

@@ -12,3 +12,6 @@ python-telegram-bot
 pydantic
 loguru
 
+transformers
+torch
+accelerate
