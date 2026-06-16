@@ -34,3 +34,13 @@ class MessageRepository:
             .order_by(Message.created_at.desc())
             .all()
         )
+
+    @staticmethod
+    def get_recent_messages(db: Session, user_id: str, limit: int = 5):
+        return (
+            db.query(Message)
+            .filter(Message.user_id == user_id)
+            .order_by(Message.created_at.desc())
+            .limit(limit)
+            .all()
+        )

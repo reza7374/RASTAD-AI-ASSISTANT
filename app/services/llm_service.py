@@ -3,9 +3,11 @@ class LLMService:
     Service responsible for generating assistant replies.
 
     Current version:
-    - mock / rule-based response generation
+    - rule-based mock responses
+    - supports conversation history and retrieved context
+
     Future version:
-    - can be replaced by a real LLM provider
+    - replace with real LLM (OpenAI / Ollama / HF)
     """
 
     def generate_reply(
@@ -14,46 +16,65 @@ class LLMService:
         context: str,
         intent: str,
         user_segment: str,
+        history: str = "",
     ) -> str:
         """
-        Generate a reply based on:
-        - user message
+        Generate assistant reply based on:
+        - conversation history
         - retrieved knowledge context
         - detected intent
         - user segment
         """
 
+        # -----------------------------
+        # 1️⃣ Knowledge-based response
+        # -----------------------------
         if context:
             return (
-                f"بر اساس اطلاعات موجود:\n\n"
+                "بر اساس اطلاعات موجود:\n\n"
                 f"{context}\n\n"
-                f"اگر بخواهید، می‌توانم خلاصه‌تر یا دقیق‌تر هم توضیح دهم."
+                "اگر بخش خاصی از این اطلاعات برای شما مهم است "
+                "می‌توانم آن را ساده‌تر یا دقیق‌تر توضیح دهم."
             )
 
+        # -----------------------------
+        # 2️⃣ Intent-based responses
+        # -----------------------------
         if intent == "support_request":
             return (
-                "متوجه شدم که به پشتیبانی نیاز دارید. "
-                "لطفاً مشکل خود را با جزئیات بیشتری توضیح دهید تا بهتر راهنمایی‌تان کنم."
+                "به نظر می‌رسد به پشتیبانی نیاز دارید. "
+                "لطفاً مشکل خود را با جزئیات بیشتری توضیح دهید تا بتوانم بهتر راهنمایی‌تان کنم."
             )
 
         if intent == "vip_question":
             return (
-                "خدمات VIP راستاد برای کاربرانی مناسب است که به دنبال خدمات ویژه و پشتیبانی اختصاصی هستند. "
-                "اگر مایل باشید، می‌توانم جزئیات بیشتری ارائه دهم."
+                "خدمات VIP راستاد برای کاربرانی طراحی شده که به دنبال خدمات حرفه‌ای‌تر "
+                "و پشتیبانی اختصاصی هستند.\n\n"
+                "اگر مایل باشید می‌توانم درباره مزایا، شرایط و نحوه دریافت این خدمات "
+                "بیشتر توضیح بدهم."
             )
 
         if intent == "exchange_registration":
             return (
-                "برای ثبت‌نام در صرافی، می‌توانم مراحل و نکات مهم را برای شما توضیح دهم."
+                "برای ثبت‌نام در صرافی می‌توانم مراحل کامل ثبت‌نام و نکات مهم امنیتی "
+                "را برای شما توضیح بدهم.\n\n"
+                "اگر صرافی خاصی مدنظر دارید هم بفرمایید تا دقیق‌تر راهنمایی کنم."
             )
 
         if intent == "kol_collaboration":
             return (
-                "برای همکاری در برنامه KOL، می‌توانم شرایط و روند همکاری را توضیح بدهم."
+                "برنامه همکاری KOL برای افرادی طراحی شده که جامعه کاربری فعال دارند "
+                "و می‌خواهند با راستاد همکاری کنند.\n\n"
+                "اگر دوست داشته باشید می‌توانم شرایط همکاری و مراحل شروع را توضیح بدهم."
             )
 
+        # -----------------------------
+        # 3️⃣ Fallback response
+        # -----------------------------
         return (
-            "ممنون از پیام شما. اگر درباره خدمات راستاد، VIP، ثبت‌نام صرافی یا همکاری سوالی دارید، خوشحال می‌شوم کمک کنم."
+            "ممنون از پیام شما.\n\n"
+            "اگر درباره خدمات راستاد، برنامه VIP، ثبت‌نام صرافی "
+            "یا همکاری KOL سوالی دارید خوشحال می‌شوم کمک کنم."
         )
 
 
