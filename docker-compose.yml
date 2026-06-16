@@ -15,5 +15,20 @@ services:
     volumes:
       - rastad_postgres_data:/var/lib/postgresql/data
 
+  api:
+    build: .
+    container_name: rastad_api
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://rastad_user:rastad_pass@postgres:5432/rastad_ai
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+      - ./knowledge_base:/app/knowledge_base
+
 volumes:
   rastad_postgres_data:
