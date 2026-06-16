@@ -28,3 +28,18 @@ class UserRepository:
         db.commit()
         db.refresh(user)
         return user
+    
+    @staticmethod
+    def get_all_users(db: Session, skip: int = 0, limit: int = 100):
+
+        return db.query(User).offset(skip).limit(limit).all()
+
+    @staticmethod
+    def update_last_seen(db: Session, user_id: str):
+
+        user = db.query(User).filter(User.user_id == user_id).first()
+        if user:
+            user.last_seen_at = datetime.utcnow()
+            db.commit()
+            db.refresh(user)
+        return user

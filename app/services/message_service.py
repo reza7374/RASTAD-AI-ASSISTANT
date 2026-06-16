@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.repositories.message_repository import MessageRepository
 from app.repositories.user_repository import UserRepository
-from app.schemas.message_schema import MessageResponse
+from app.schemas.message_schema import MessageReplyResponse
 from app.services.intent_service import detect_intent
 from app.services.knowledge_service import knowledge_service
 from app.services.llm_service import llm_service
@@ -23,7 +23,7 @@ class MessageService:
         user_id: str,
         name: str,
         message: str,
-    ) -> MessageResponse:
+    ) -> MessageReplyResponse:
 
         # -----------------------------
         # 1️⃣ Detect intent and segment
@@ -44,7 +44,7 @@ class MessageService:
                 segment=user_segment,
             )
         else:
-            UserRepository.update_last_seen(db=db, user=user)
+            UserRepository.update_last_seen(db=db, user_id=user.user_id)
 
         # -----------------------------
         # 3️⃣ Get conversation history
@@ -101,7 +101,7 @@ class MessageService:
         # -----------------------------
         # 8️⃣ Return API response
         # -----------------------------
-        return MessageResponse(
+        return MessageReplyResponse(
             reply=reply,
             intent=intent,
             user_segment=user_segment,
