@@ -19,5 +19,11 @@ router = APIRouter()
 
 
 @router.post("/message", response_model=MessageResponse)
-def message_endpoint(request: MessageRequest, db: Session = Depends(get_db)):
-    return handle_message(request, db)
+def process_message(request: MessageRequest, db: Session = Depends(get_db)):
+
+    return handle_message(
+        db=db,
+        user_id=request.user_id,
+        name=request.name,
+        message=request.message
+    )

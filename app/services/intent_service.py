@@ -1,5 +1,4 @@
-def detect_intent(message: str):
-
+def detect_intent(message: str) -> str:
     text = message.lower()
 
     if "vip" in text:
